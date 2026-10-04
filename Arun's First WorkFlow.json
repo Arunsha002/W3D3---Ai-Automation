@@ -1,0 +1,185 @@
+{
+  "name": "Arun's First WorkFlow",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Upload CSV",
+        "formDescription": "Upload the student's data to the file",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "File Upload",
+              "fieldType": "file"
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -112,
+        0
+      ],
+      "id": "ba4e7c29-0e52-41e3-93d8-fdbc157c6b05",
+      "name": "On form submission",
+      "webhookId": "c67c0594-48c9-48ab-8700-3a023e2ed5bb"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "File_Upload",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        112,
+        0
+      ],
+      "id": "2cedd723-4d1e-4935-b25c-a5786d5e2a3b",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a data-cleaning assistant processing student enrollment records.\n\nThe input contains exactly these fields:\n\n- Student_ID\n- Name\n- Email\n- Phone\n- Course\n- Fee_Paid\n- City\n- Enrolled_Date\n\nClean the current student record according to the following rules:\n\n1. Student_ID:\n   - Remove unnecessary spaces.\n   - Preserve the original ID.\n   - Do not create or change the ID.\n\n2. Name:\n   - Remove leading and trailing spaces.\n   - Use proper capitalization.\n   - Do not change the actual name.\n\n3. Email:\n   - Remove leading and trailing spaces.\n   - Convert to lowercase.\n   - Remove unnecessary spaces.\n   - Do not invent or repair an invalid email address.\n\n4. Phone:\n   - Remove unnecessary spaces, dashes, brackets, or other formatting characters.\n   - Do not invent missing digits.\n\n5. Course:\n   - Remove leading and trailing spaces.\n   - Use proper capitalization.\n   - Example: \"python\" → \"Python\".\n   - Example: \"machine learning\" → \"Machine Learning\".\n\n6. Fee_Paid:\n   - Convert clear yes/no values to \"Yes\" or \"No\".\n   - Examples: \"YES\", \"yes\", \"Y\" → \"Yes\".\n   - Examples: \"NO\", \"no\", \"N\" → \"No\".\n\n7. City:\n   - Remove leading and trailing spaces.\n   - Use proper capitalization.\n   - Example: \"CHENNAI\" → \"Chennai\".\n\n8. Enrolled_Date:\n   - Convert the date to DD-MM-YYYY format.\n   - Do not change the actual date.\n   - If the date cannot be reliably interpreted, return null.\n\n9. Do not invent or guess information.\n10. Do not remove any fields.\n11. Keep exactly these field names:\n    Student_ID\n    Name\n    Email\n    Phone\n    Course\n    Fee_Paid\n    City\n    Enrolled_Date\n\n12. Missing values must be returned as null.\n\nThe output must be a structured JSON object matching the configured output schema.\n\nDo not return markdown.\nDo not return ```json.\nDo not return explanations.\n\nStudent record to clean:\n\n{{ JSON.stringify($json) }}",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        336,
+        0
+      ],
+      "id": "078711d0-40a2-436b-9074-048d2984a2ad",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        208
+      ],
+      "id": "8750916e-81e1-4f7d-a01a-df4c25e6bf88",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "MMnYEtzeYq17QKTw",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Get the LLM response from the \"text\" field\nconst rawText = $json.text;\n\n// Convert the JSON string into a real JSON object\nconst cleanedData = JSON.parse(rawText);\n\n// Return the cleaned JSON object\nreturn {\n  json: cleanedData\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        0
+      ],
+      "id": "fbb2b13f-73d0-43e8-b2c5-51cce249838d",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        928,
+        0
+      ],
+      "id": "87fc1cec-aac5-45c2-b4cd-08ff56b6cb6c",
+      "name": "Convert to File"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0766e344-b212-4850-bb6d-d34caa00f65f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2735f001cfde1c5e3c54c30451722296059789f8b25a3ad0616b2fb9654e2619"
+  },
+  "nodeGroups": [],
+  "id": "37mXodpYI8PKePym",
+  "tags": []
+}

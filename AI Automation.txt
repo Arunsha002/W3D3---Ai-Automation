@@ -1,0 +1,12 @@
+Type of Nodes in n8n
+
+1. Trigger Nodes
+2. Dataflow Nodes
+3. Conditional Nodes
+4. Action Nodes - It has few codes to be written
+5. AI Nodes ( LLM , AI Agents ) - to use or lin with LLM
+
+Explanation of most of the Nodes in the above category
+
+HTTP Node vs WebHook Node
+
